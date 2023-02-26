@@ -1,0 +1,6 @@
+dist
+node_modules
+src/modules
+pnpm-lock.yaml
+.vscode
+coverage
