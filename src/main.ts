@@ -6,7 +6,7 @@ const bot = new TwitchChatBot({
   twitchAuthorizationCode: process.env.authorization_code ?? "",
   twitchClientId: process.env.client_id ?? "",
   twitchClientSecret: process.env.client_secret ?? "",
-  twitchChannel: "pabz_z", // the channel you want to connect to
-  twitchUser: "pabz_Z", // the bot user account
+  twitchChannel: process.env.channel ?? "", // the channel you want to connect to
+  twitchUser: process.env.user ?? "", // the bot user account
 });
 bot.launch();
