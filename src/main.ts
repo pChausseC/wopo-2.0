@@ -1,9 +1,12 @@
-function sayMyName(name: string): void {
-  if (name === "Heisenberg") {
-    console.log("You're right 👍");
-  } else {
-    console.log("Youre wrong 👎");
-  }
-}
+require("dotenv").config();
+import { TwitchChatBot } from "./chat-bot/chat-bot";
 
-sayMyName("Heisenberg");
+const bot = new TwitchChatBot({
+  twitchTokenEndpoint: "https://id.twitch.tv/oauth2/token",
+  twitchAuthorizationCode: process.env.authorization_code ?? "",
+  twitchClientId: process.env.client_id ?? "",
+  twitchClientSecret: process.env.client_secret ?? "",
+  twitchChannel: "pabz_z", // the channel you want to connect to
+  twitchUser: "pabz_Z", // the bot user account
+});
+bot.launch();
