@@ -1,3 +1,4 @@
+import { ChatBotConfig, TwitchTokenDetails, User } from "../types/chat-bot.types";
 import {
   MalformedTwitchRequestError,
   NoTwitchResponseError,
@@ -69,8 +70,8 @@ export class TwitchChatBot {
   private setupBotBehavior() {
     this.twitchClient.on(
       "message",
-      (channel: string, tags: string[], message: string, self: user) => {
-        let helloCommand = "!hello";
+      (channel: string, tags: string[], message: string, self: User) => {
+        const helloCommand = "!hello";
 
         //! means a command is coming by, and we check if it matches the command we currently support
         if (message.startsWith("!") && message === helloCommand) this.sayHelloToUser(channel, tags);

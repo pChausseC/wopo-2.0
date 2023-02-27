@@ -1,44 +1,44 @@
 export class InvalidTwitchConfigError extends Error {
-    name = 'InvalidTwitchConfigError'
+  name = "InvalidTwitchConfigError";
 
-    constructor(errorMessage: string) {
-        super();
-        this.message = errorMessage;
-    }
-} 
+  constructor(errorMessage: string) {
+    super();
+    this.message = errorMessage;
+  }
+}
 
 export class NoTwitchResponseError extends Error {
-    name = 'NoTwitchResponseError'
+  name = "NoTwitchResponseError";
 
-    constructor(errorMessage: string) {
-        super();
-        this.message = errorMessage;
-    }
-} 
+  constructor(errorMessage: string) {
+    super();
+    this.message = errorMessage;
+  }
+}
 
 export class InvalidTwitchResponseError extends Error {
-    name = 'InvalidTwitchResponseError'
+  name = "InvalidTwitchResponseError";
 
-    constructor(errorMessage: string) {
-        super();
-        this.message = errorMessage;
-    }
-} 
+  constructor(errorMessage: string) {
+    super();
+    this.message = errorMessage;
+  }
+}
 
 export class TwitchResponseError extends Error {
-    name = 'TwitchResponseError'
+  name = "TwitchResponseError";
 
-    constructor(errorMessage: string) {
-        super();
-        this.message = errorMessage;
-    }
-} 
+  constructor(errorMessage: string) {
+    super();
+    this.message = errorMessage;
+  }
+}
 
 export class MalformedTwitchRequestError extends Error {
-    name = 'MalformedTwitchRequestError'
+  name = "MalformedTwitchRequestError";
 
-    constructor(errorMessage: string) {
-        super();
-        this.message = errorMessage;
-    }
-} 
+  constructor(errorMessage: string) {
+    super();
+    this.message = errorMessage;
+  }
+}
