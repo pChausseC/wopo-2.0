@@ -1,6 +1,6 @@
 module.exports = {
   parser: "@typescript-eslint/parser",
-  plugins: ["prettier", "@typescript-eslint"],
+  plugins: ["import", "prettier", "@typescript-eslint"],
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
@@ -12,5 +12,14 @@ module.exports = {
   },
   rules: {
     "prettier/prettier": ["error", {}, { usePrettierrc: true }],
+    "no-duplicate-imports": "error",
+    "sort-imports": ["error", { ignoreCase: true, ignoreDeclarationSort: true }],
+    "import/order": [
+      1,
+      {
+        "newlines-between": "always",
+        alphabetize: { order: "asc", caseInsensitive: true },
+      },
+    ],
   },
 };
