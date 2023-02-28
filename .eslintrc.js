@@ -21,5 +21,6 @@ module.exports = {
         alphabetize: { order: "asc", caseInsensitive: true },
       },
     ],
+    "@typescript-eslint/no-var-requires": "off",
   },
 };
