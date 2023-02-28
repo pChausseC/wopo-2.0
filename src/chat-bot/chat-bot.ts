@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 import { ChatBotConfig, TwitchTokenDetails, User } from "../types/chat-bot.types";
 import {
   MalformedTwitchRequestError,
@@ -9,12 +11,35 @@ export class TwitchChatBot {
   tmi = require("tmi.js");
 
   public twitchClient: any;
+  private supabaseClient = createClient(
+    process.env.supabaseURL ?? "",
+    process.env.supabaseKey ?? "",
+  );
+
   private tokenDetails!: TwitchTokenDetails;
 
   constructor(private config: ChatBotConfig) {}
 
   async launch() {
-    this.tokenDetails = await this.fetchAccessToken();
+    const { data, error } = await this.supabaseClient
+      .from("channel_refresh_tokens")
+      .select("channel_token, id")
+      .eq("channel", this.config.twitchChannel);
+    if (data && data.length > 0) {
+      this.tokenDetails = await this.fetchAccessToken(data[0].channel_token);
+      this.supabaseClient
+        .from("channel_refresh_tokens")
+        .update({
+          channel_token: this.tokenDetails.refresh_token,
+        })
+        .eq("id", data[0].id);
+    } else {
+      this.tokenDetails = await this.fetchAccessToken();
+      await this.supabaseClient.from("channel_refresh_tokens").insert({
+        channel: this.config.twitchChannel,
+        channel_token: this.tokenDetails.refresh_token,
+      });
+    }
     this.twitchClient = new this.tmi.Client(
       this.buildConnectionConfig(
         this.config.twitchChannel,
@@ -26,19 +51,27 @@ export class TwitchChatBot {
     this.twitchClient.connect();
   }
 
-  private async fetchAccessToken(): Promise<TwitchTokenDetails> {
+  private async fetchAccessToken(refreshToken?: string): Promise<TwitchTokenDetails> {
     const axios = require("axios");
     console.log("Fetching Twitch OAuth Token");
+    const params = refreshToken
+      ? {
+          client_id: this.config.twitchClientId,
+          client_secret: this.config.twitchClientSecret,
+          refresh_token: refreshToken,
+          grant_type: "refresh_token",
+        }
+      : {
+          client_id: this.config.twitchClientId,
+          client_secret: this.config.twitchClientSecret,
+          code: this.config.twitchAuthorizationCode,
+          grant_type: "authorization_code",
+          redirect_uri: "http://localhost",
+        };
     return axios({
       method: "post",
       url: this.config.twitchTokenEndpoint,
-      params: {
-        client_id: this.config.twitchClientId,
-        client_secret: this.config.twitchClientSecret,
-        code: this.config.twitchAuthorizationCode,
-        grant_type: "authorization_code",
-        redirect_uri: "http://localhost",
-      },
+      params,
       responseType: "json",
     })
       .then(async function (response: { data: TwitchTokenDetails }) {
@@ -63,15 +96,12 @@ export class TwitchChatBot {
       });
   }
 
-  refreshTokenIfNeeded() {
-    //TODO if needed - twitch apparently only requires the token on login so it is good enough for now to just get a token on start-up.
-  }
-
   private setupBotBehavior() {
     this.twitchClient.on(
       "message",
       (channel: string, tags: string[], message: string, self: User) => {
-        const helloCommand = "!hello";
+        const helloCommand = "!beep";
+        console.log(tags, self);
 
         //! means a command is coming by, and we check if it matches the command we currently support
         if (message.startsWith("!") && message === helloCommand) this.sayHelloToUser(channel, tags);
