@@ -1,21 +1,21 @@
-import { ChatUserstate } from "tmi.js";
+import { ChatUserstate, Client } from "tmi.js";
 
 import { OnMessage, ResponseProps } from "../types/twitch.types";
 
 export default class Chat {
-  util: any;
-  api: any;
-  fn: any;
-  db: any;
-  constructor(private twitchClient: any) {
-    console.log(twitchClient);
-  }
+  private util: any;
+  private api: any;
+  private fn: any;
+  private db: any;
+  private cron: any;
+  private spotify: any;
+  constructor(private twitchClient: Client) {}
   responses: {
     [key: string]: (arg: Omit<OnMessage, "self">) => void;
   } = {
     "!beep": this.boop,
     "!hi": ({ user }) => {
-      this.twitchClient.whisper(user.username, "HeyGuys");
+      if (user.username) this.twitchClient.whisper(user.username, "HeyGuys");
     },
     "!addcomm?": ({ channel, user }) => {
       if (user.mod) {
@@ -85,7 +85,8 @@ export default class Chat {
           this.twitchClient.say(channel, `created command ${command}`);
         },
         (command: string, user: ChatUserstate, error: any) => {
-          this.twitchClient.whisper(user.username, `Error adding the command: ${error.message}`);
+          if (user.username)
+            this.twitchClient.whisper(user.username, `Error adding the command: ${error.message}`);
         },
       );
     }
@@ -109,7 +110,7 @@ export default class Chat {
           this.twitchClient.say(channel, `Command ${command} was updated successfully!`);
         },
         (user: ChatUserstate) => {
-          this.twitchClient.whisper(user.username, "Error adding the command");
+          if (user.username) this.twitchClient.whisper(user.username, "Error adding the command");
         },
       );
     }
@@ -160,13 +161,17 @@ export default class Chat {
   }
   // Get Follow Age
   private async getFollowAge({ user }: ResponseProps) {
-    const followAge = await this.api.followage(user["user-id"]);
-    this.twitchClient.whisper(user.username, followAge);
+    if (user.username) {
+      const followAge = await this.api.followage(user["user-id"]);
+      this.twitchClient.whisper(user.username, followAge);
+    }
   }
   // Get Clip
   private async getClip({ user }: ResponseProps) {
-    const clipURL = await this.api.clip();
-    this.twitchClient.whisper(user.username, clipURL);
+    if (user.username) {
+      const clipURL = await this.api.clip();
+      this.twitchClient.whisper(user.username, clipURL);
+    }
   }
   //Search for information
   private async searchInfo({ channel, message }: ResponseProps) {
@@ -204,7 +209,8 @@ export default class Chat {
         this.updateCommand({ channel, user, message: updateMessage });
         this.twitchClient.say(channel, multi);
       } else {
-        this.twitchClient.whisper(user.username, "Only Mods can update the multilink!");
+        if (user.username)
+          this.twitchClient.whisper(user.username, "Only Mods can update the multilink!");
       }
     }
   }
@@ -251,49 +257,51 @@ export default class Chat {
    * !song: Gets currently playing song on Spotify
    * Note: A spotify refresh token must be set in config to use this command
    */
-  // private async nowPlayingCommand({ channel }: ResponseProps) {
-  //   try {
-  //     const _songInfo = await spotify.nowPlaying();
-  //     const { name, artist, url } = _songInfo;
-  //     this.twitchClient.say(channel, `Currently Playing: ${name} by ${artist} ${url}`);
-  //   } catch (error) {
-  //     console.log(error);
-  //     this.twitchClient.say(channel, "Woops...Spotify isn't connected right now.");
-  //   }
-  // }
+  private async nowPlayingCommand({ channel }: ResponseProps) {
+    try {
+      const _songInfo = await this.spotify.nowPlaying();
+      const { name, artist, url } = _songInfo;
+      this.twitchClient.say(channel, `Currently Playing: ${name} by ${artist} ${url}`);
+    } catch (error) {
+      console.log(error);
+      this.twitchClient.say(channel, "Woops...Spotify isn't connected right now.");
+    }
+  }
 
   // Automatic Bot Engagement
-  _engagementSchedule = null;
-  // private botEngagement({ channel, user, message }: ResponseProps) {
-  //   const _arrEngagement = [
-  //     "Missed a stream? No problem! Every stream is organized with a title, thumbnail, and date over at www.youtube.com/c/wlvsarchive",
-  //     "Want to stay connected with Jay & The Wolfpack offline? Join the community discord! www.discord.gg/wlvs",
-  //     "New to the stream? Make sure to follow by hitting the :heart: Follow button at the bottom of the stream, also hit the :bell: to be notified every time jay goes live!",
-  //   ];
-  //   const params = message.split(" ");
-  //   let counter = 0;
+  _engagementSchedule: any = null;
+  private botEngagement({ channel, user, message }: ResponseProps) {
+    const _arrEngagement = [
+      "Missed a stream? No problem! Every stream is organized with a title, thumbnail, and date over at www.youtube.com/c/wlvsarchive",
+      "Want to stay connected with Jay & The Wolfpack offline? Join the community discord! www.discord.gg/wlvs",
+      "New to the stream? Make sure to follow by hitting the :heart: Follow button at the bottom of the stream, also hit the :bell: to be notified every time jay goes live!",
+    ];
+    const params = message.split(" ");
+    let counter = 0;
 
-  //   // If user is a mod, check if the command is starting or stopping
-  //   if (user.mod) {
-  //     // Stopping
-  //     if (params.slice(1)[0] == "stop" && this._engagementSchedule) {
-  //       this._engagementSchedule.destroy();
-  //       this._engagementSchedule = null;
-  //       this.twitchClient.whisper(user.username, "Bot chat user engagement cycle stopped");
-  //     } else {
-  //       this.twitchClient.whisper(user.username, "started chat bot user engagement post cycle");
-  //       // Starting
-  //       this._engagementSchedule = cron.schedule("*/10 * * * *", () => {
-  //         this.twitchClient.say(channel, _arrEngagement[counter]);
+    // If user is a mod, check if the command is starting or stopping
+    if (user.mod) {
+      // Stopping
+      if (params.slice(1)[0] == "stop" && this._engagementSchedule) {
+        this._engagementSchedule.destroy();
+        this._engagementSchedule = null;
+        if (user.username)
+          this.twitchClient.whisper(user.username, "Bot chat user engagement cycle stopped");
+      } else {
+        if (user.username)
+          this.twitchClient.whisper(user.username, "started chat bot user engagement post cycle");
+        // Starting
+        this._engagementSchedule = this.cron.schedule("*/10 * * * *", () => {
+          this.twitchClient.say(channel, _arrEngagement[counter]);
 
-  //         if (counter == _arrEngagement.length - 1) {
-  //           // recycle message list
-  //           counter = 0;
-  //         } else {
-  //           counter++; // cycle to next message in list
-  //         }
-  //       });
-  //     }
-  //   }
-  // }
+          if (counter == _arrEngagement.length - 1) {
+            // recycle message list
+            counter = 0;
+          } else {
+            counter++; // cycle to next message in list
+          }
+        });
+      }
+    }
+  }
 }
