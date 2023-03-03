@@ -1,16 +1,25 @@
 import { createClient } from "@supabase/supabase-js";
+import { Client } from "tmi.js";
 
-import { ChatBotConfig, TwitchTokenDetails, User } from "../types/chat-bot.types";
+import { ChatBotConfig, TwitchTokenDetails } from "../types/chat-bot.types";
 import {
   MalformedTwitchRequestError,
   NoTwitchResponseError,
   TwitchResponseError,
 } from "../types/error.types";
 
-export class TwitchChatBot {
-  tmi = require("tmi.js");
+import Chat from "./chat";
 
-  public twitchClient: any;
+// Set the prefix
+const prefix = "!";
+
+//regex to determine if message is a link
+const regex = /[-a-zA-Z0-9@:%_\\+~#?&//=]{2,256}\.[a-z]{2,3}\b(\/[-a-zA-Z0-9@:%_\\+.~#?&//=]*)?/gi;
+const regex2 = /(clips\.twitch\.tv)/gi;
+
+export class Wopo {
+  public twitchClient?: Client;
+  public chat?: Chat;
   private supabaseClient = createClient(
     process.env.supabaseURL ?? "",
     process.env.supabaseKey ?? "",
@@ -40,7 +49,7 @@ export class TwitchChatBot {
         channel_token: this.tokenDetails.refresh_token,
       });
     }
-    this.twitchClient = new this.tmi.Client(
+    this.twitchClient = new Client(
       this.buildConnectionConfig(
         this.config.twitchChannel,
         this.config.twitchUser,
@@ -49,6 +58,7 @@ export class TwitchChatBot {
     );
     this.setupBotBehavior();
     this.twitchClient.connect();
+    this.chat = new Chat(this.twitchClient);
   }
 
   private async fetchAccessToken(refreshToken?: string): Promise<TwitchTokenDetails> {
@@ -97,20 +107,29 @@ export class TwitchChatBot {
   }
 
   private setupBotBehavior() {
-    this.twitchClient.on(
-      "message",
-      (channel: string, tags: string[], message: string, self: User) => {
-        const helloCommand = "!beep";
-        console.log(tags, self);
+    if (!this.twitchClient) {
+      console.error("launch bot");
+      return;
+    }
+    this.twitchClient.on("message", (channel, user, message, self) => {
+      const isLink = message.match(regex);
+      const isClip = message.match(regex2);
+      const timeoutMSG = `@${user.username}no links in chat. Whisper the link to a mod.`;
+      //allow subs to post clip links, timeout all other links
+      if (user.subscriber && isClip) {
+        /* empty */
+      } else if (!(self || user.mod) && isLink) {
+        this.twitchClient?.timeout(channel, `${user.username}`, 5, "posted link");
+        this.twitchClient?.say(channel, timeoutMSG);
+      }
 
-        //! means a command is coming by, and we check if it matches the command we currently support
-        if (message.startsWith("!") && message === helloCommand) this.sayHelloToUser(channel, tags);
-      },
-    );
-  }
+      //Short circuit messages that have no prefix OR are by the bot
+      if (!message.startsWith(prefix)) return;
 
-  private sayHelloToUser(channel: any, tags: any) {
-    this.twitchClient.say(channel, `Hello, ${tags.username}! Welcome to the channel.`);
+      //if we have a response for this
+      const command = message.split(" ")[0];
+      this.chat?.runCommand({ command, channel, user, message });
+    });
   }
 
   private buildConnectionConfig(channel: string, username: string, accessToken: string) {

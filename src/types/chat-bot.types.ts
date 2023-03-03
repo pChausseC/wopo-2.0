@@ -14,4 +14,3 @@ export type TwitchTokenDetails = {
   scope: string[];
   token_type: string;
 };
-export type User = {};

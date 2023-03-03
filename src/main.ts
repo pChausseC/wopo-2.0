@@ -1,7 +1,7 @@
 require("dotenv").config();
-import { TwitchChatBot } from "./chat-bot/chat-bot";
+import { Wopo } from "./chat-bot/wopo";
 
-const bot = new TwitchChatBot({
+const bot = new Wopo({
   twitchTokenEndpoint: "https://id.twitch.tv/oauth2/token",
   twitchAuthorizationCode: process.env.authorization_code ?? "",
   twitchClientId: process.env.client_id ?? "",
