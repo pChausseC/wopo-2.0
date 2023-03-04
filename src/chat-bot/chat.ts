@@ -63,7 +63,7 @@ export default class Chat {
   };
   runCommand({ command, channel, user, message }: Omit<OnMessage, "self"> & { command: string }) {
     if (this.responses[command]) {
-      this.responses[command]({ channel, user, message });
+      this.responses[command].bind(this)({ channel, user, message });
     } else {
       // db.getCommand(command, channel, user.mod, executeCommand, commandError);
     }
