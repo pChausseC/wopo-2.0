@@ -1,6 +1,8 @@
+import SpotifyWebApi from "spotify-web-api-node";
 import { ChatUserstate, Client } from "tmi.js";
 
 import { OnMessage, ResponseProps } from "../types/twitch.types";
+const { spotify_client_id, spotify_client_secret, spotify_access_token } = process.env;
 
 export default class Chat {
   private util: any;
@@ -8,8 +10,19 @@ export default class Chat {
   private fn: any;
   private db: any;
   private cron: any;
-  private spotify: any;
-  constructor(private twitchClient: Client) {}
+  private spotify?: SpotifyWebApi;
+  constructor(private twitchClient: Client) {
+    if (spotify_client_id && spotify_client_secret && spotify_access_token) {
+      this.spotify = new SpotifyWebApi({
+        clientId: spotify_client_id,
+        clientSecret: spotify_client_secret,
+        accessToken: spotify_access_token,
+      });
+    } else {
+      this.spotify = undefined;
+      console.warn("missing spotify api env vars");
+    }
+  }
   responses: {
     [key: string]: (arg: Omit<OnMessage, "self">) => void;
   } = {
@@ -45,7 +58,7 @@ export default class Chat {
     "!multi": this.setMultilink,
     "!?": this.searchInfo,
     // "!cycle": this.cycleCommand,
-    // "!song": this.nowPlayingCommand,
+    "!song": this.nowPlayingCommand,
     // "!botengagement": this.botEngagement,
   };
   runCommand({ command, channel, user, message }: Omit<OnMessage, "self"> & { command: string }) {
@@ -259,9 +272,22 @@ export default class Chat {
    */
   private async nowPlayingCommand({ channel }: ResponseProps) {
     try {
-      const _songInfo = await this.spotify.nowPlaying();
-      const { name, artist, url } = _songInfo;
-      this.twitchClient.say(channel, `Currently Playing: ${name} by ${artist} ${url}`);
+      if (!this.spotify) throw new Error("Spotify is not initialized");
+      const {
+        body: { item },
+      } = await this.spotify.getMyCurrentPlayingTrack();
+      if (item) {
+        if (item.type == "track") {
+          this.twitchClient.say(
+            channel,
+            `Currently Playing: ${item.name} by ${item.artists.join()} ${item.uri}`,
+          );
+        } else {
+          this.twitchClient.say(channel, `Currently Playing: ${item.name} ${item.uri}`);
+        }
+      } else {
+        this.twitchClient.say(channel, "Nothing playing currently");
+      }
     } catch (error) {
       console.log(error);
       this.twitchClient.say(channel, "Woops...Spotify isn't connected right now.");
