@@ -1,7 +1,7 @@
 import SpotifyWebApi from "spotify-web-api-node";
 import { ChatUserstate, Client } from "tmi.js";
 
-import { supabaseClient } from "../services/supabase";
+import * as db from "../services/db";
 import { OnMessage, ResponseProps } from "../types/twitch.types";
 const { spotify_client_id, spotify_client_secret, spotify_access_token } = process.env;
 
@@ -71,12 +71,7 @@ export default class Chat {
     if (this.responses[command]) {
       this.responses[command].bind(this)({ channel, user, message });
     } else {
-      const { data } = await supabaseClient
-        .from("commands")
-        .select("response, isMod")
-        .eq("command", command.substring(1))
-        .limit(1)
-        .single();
+      const { data } = await db.getDBCommand(command);
       if (data) {
         if ((data.isMod && user.mod) || !data.isMod) this.twitchClient.say(channel, data.response);
       }

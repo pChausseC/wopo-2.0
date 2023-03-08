@@ -1,6 +1,6 @@
 import { Client } from "tmi.js";
 
-import { supabaseClient } from "../services/supabase";
+import * as db from "../services/db";
 import { ChatBotConfig, TwitchTokenDetails } from "../types/chat-bot.types";
 import {
   MalformedTwitchRequestError,
@@ -26,24 +26,13 @@ export class Wopo {
   constructor(private config: ChatBotConfig) {}
 
   async launch() {
-    const { data } = await supabaseClient
-      .from("channel_refresh_tokens")
-      .select("channel_token, id")
-      .eq("channel", this.config.twitchChannel);
-    if (data && data.length > 0) {
-      this.tokenDetails = await this.fetchAccessToken(data[0].channel_token);
-      supabaseClient
-        .from("channel_refresh_tokens")
-        .update({
-          channel_token: this.tokenDetails.refresh_token,
-        })
-        .eq("id", data[0].id);
+    const { data } = await db.getChannelRefreshToken(this.config.twitchChannel);
+    if (data) {
+      this.tokenDetails = await this.fetchAccessToken(data.token);
+      db.updateChannelRefreshToken(data.id, this.tokenDetails.refresh_token);
     } else {
       this.tokenDetails = await this.fetchAccessToken();
-      await supabaseClient.from("channel_refresh_tokens").insert({
-        channel: this.config.twitchChannel,
-        channel_token: this.tokenDetails.refresh_token,
-      });
+      db.addChannelRefreshToken(this.config.twitchChannel, this.tokenDetails.refresh_token);
     }
     this.twitchClient = new Client(
       this.buildConnectionConfig(
