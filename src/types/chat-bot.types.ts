@@ -14,3 +14,11 @@ export type TwitchTokenDetails = {
   scope: string[];
   token_type: string;
 };
+
+export interface ICommands {
+  command: string;
+  isMod: boolean;
+  response: string;
+  creator: string;
+  channel: string;
+}

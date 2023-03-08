@@ -1,7 +1,7 @@
 import SpotifyWebApi from "spotify-web-api-node";
 import { ChatUserstate, Client } from "tmi.js";
 
-import * as db from "../services/db";
+import { db } from "../services/db";
 import { OnMessage, ResponseProps } from "../types/twitch.types";
 const { spotify_client_id, spotify_client_secret, spotify_access_token } = process.env;
 
@@ -208,8 +208,10 @@ export default class Chat {
     if (user.mod) {
       const command = message.split(" ")[1];
       if (!command.toString().startsWith("!")) return;
-      this.db.removeCommand(command, (channel: string, command: string) => {
-        this.twitchClient.say(channel, `Deleted command ${command} successfully!`);
+      db.removeCommand(command).then(({ data }) => {
+        if (data) {
+          this.twitchClient.say(data.channel, `Deleted command ${command} successfully!`);
+        }
       });
     }
   }

@@ -1,5 +1,7 @@
 import pgPromise from "pg-promise";
 
+import { ICommands } from "../types/chat-bot.types";
+
 // Configuration
 
 const connection = {
@@ -9,20 +11,25 @@ const connection = {
   password: process.env.db_pw,
   port: 5432,
 };
-const db = pgPromise()(connection);
+const pgClient = pgPromise()(connection);
 
-export const getDBCommand = (command: string) =>
-  db
-    .one(
-      "SELECT commands.ismod, commands.response FROM public.commands WHERE command = $1 limit 1",
-      command,
-    )
+const queryWrapper = <T = object>(fn: Promise<T>) =>
+  fn
     .then(data => {
-      return { data, error: null };
+      return { data: data, error: null };
     })
     .catch(error => {
+      console.error(error);
       return { data: null, error };
     });
+
+const getDBCommand = (command: string) =>
+  queryWrapper(
+    pgClient.one<{ isMod: boolean; response: string }>(
+      "SELECT commands.ismod, commands.response FROM public.commands WHERE command = $1 limit 1;",
+      command,
+    ),
+  );
 
 // exports.doesCommandExist = function (command) {
 //   return new Promise((resolve, reject) => {
@@ -40,16 +47,18 @@ export const getDBCommand = (command: string) =>
 // };
 
 //#region CREATE
-// exports.newCommand = (command, isMod, response, creator, channel, callback, eCallback) => {
-//   db.one(
-//     "SELECT commands.ismod, commands.response FROM public.commands WHERE command = $1 limit 1",
-//     command,
-//   )
+// const newCommand = (command, isMod, response, creator, channel, callback, eCallback) => {
+//   pgClient
+//     .one(
+//       "SELECT commands.ismod, commands.response FROM public.commands WHERE command = $1 limit 1",
+//       command,
+//     )
 //     .then(function (commandInfo) {
-//       db.none(
-//         "INSERT INTO public.commands(command, isMod, response, creator, channel) VALUES ($1, $2, $3, $4, $5);",
-//         [command, isMod, response, creator, channel],
-//       )
+//       pgClient
+//         .none(
+//           "INSERT INTO public.commands(command, isMod, response, creator, channel) VALUES ($1, $2, $3, $4, $5);",
+//           [command, isMod, response, creator, channel],
+//         )
 //         .then(function (data) {
 //           callback(data);
 //         })
@@ -90,51 +99,37 @@ export const getDBCommand = (command: string) =>
 // #endregion
 
 //#region DELETE
-// exports.removeCommand = (command, callback) => {
-//   db.none("DELETE public.commands WHERE command = $1;", command)
-//     .then(function (data) {
-//       callback(data);
-//     })
-//     .catch(function (error) {
-//       console.log("ERROR:", error);
-//     });
-// };
+const removeCommand = (command: string) =>
+  queryWrapper(pgClient.one<ICommands>("DELETE public.commands WHERE command = $1;", command));
 //#endregion
-export const getChannelRefreshToken = (
-  channel: string,
-): Promise<{ data: { token: string; id: number }; error: null } | { data: null; error: any }> =>
-  db
-    .one(
-      "SELECT channel_refresh_tokens.token, id FROM public.channel_refresh_tokens WHERE channel = $1 limit 1",
+const getChannelRefreshToken = (channel: string) =>
+  queryWrapper(
+    pgClient.one<{ token: string; id: number }>(
+      "SELECT channel_refresh_tokens.token, id FROM public.channel_refresh_tokens WHERE channel = $1 limit 1;",
       channel,
-    )
-    .then(data => {
-      return { data: data, error: null };
-    })
-    .catch(error => {
-      return { data: null, error };
-    });
-export const updateChannelRefreshToken = (
-  id: number,
-  token: string,
-): Promise<{ data: null; error: null } | { data: null; error: any }> =>
-  db
-    .none("UPDATE public.channel_refresh_tokens SET token = $2,  WHERE id = $1", [id, token])
-    .then(data => {
-      return { data: data, error: null };
-    })
-    .catch(error => {
-      return { data: null, error };
-    });
-export const addChannelRefreshToken = (
-  channel: string,
-  token: string,
-): Promise<{ data: null; error: null } | { data: null; error: any }> =>
-  db
-    .none("INSERT public.channel_refresh_tokens(channel, token) VALUES ($1,$2);", [channel, token])
-    .then(data => {
-      return { data: data, error: null };
-    })
-    .catch(error => {
-      return { data: null, error };
-    });
+    ),
+  );
+
+const updateChannelRefreshToken = (id: number, token: string) =>
+  queryWrapper(
+    pgClient.none("UPDATE public.channel_refresh_tokens SET token = $2 WHERE id = $1;", [
+      id,
+      token,
+    ]),
+  );
+
+const addChannelRefreshToken = (channel: string, token: string) =>
+  queryWrapper(
+    pgClient.none("INSERT public.channel_refresh_tokens(channel, token) VALUES ($1,$2);", [
+      channel,
+      token,
+    ]),
+  );
+
+export const db = {
+  getDBCommand,
+  getChannelRefreshToken,
+  updateChannelRefreshToken,
+  addChannelRefreshToken,
+  removeCommand,
+};
