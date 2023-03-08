@@ -4,9 +4,9 @@ import pgPromise from "pg-promise";
 
 const connection = {
   user: "wopo",
-  host: "wlvsdb.cy36wqif1j5l.us-east-1.rds.amazonaws.com",
+  host: process.env.db_url,
   database: "wlvs",
-  password: "I'mgoingbacktobed",
+  password: process.env.db_pw,
   port: 5432,
 };
 const db = pgPromise()(connection);
