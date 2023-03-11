@@ -1,6 +1,6 @@
 # wopo-2.0
 
-create your .env file based on example.env file
+create your .env file based on env.ts file
 
 ## Install
 ```

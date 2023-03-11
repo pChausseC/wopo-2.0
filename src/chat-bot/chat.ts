@@ -1,9 +1,10 @@
 import SpotifyWebApi from "spotify-web-api-node";
 import { ChatUserstate, Client } from "tmi.js";
 
+import env from "../env";
 import { db } from "../services/db";
 import { OnMessage, ResponseProps } from "../types/twitch.types";
-const { spotify_client_id, spotify_client_secret, spotify_access_token } = process.env;
+const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_ACCESS_TOKEN } = env;
 
 export default class Chat {
   private util: any;
@@ -13,16 +14,11 @@ export default class Chat {
   private cron: any;
   private spotify?: SpotifyWebApi;
   constructor(private twitchClient: Client) {
-    if (spotify_client_id && spotify_client_secret && spotify_access_token) {
-      this.spotify = new SpotifyWebApi({
-        clientId: spotify_client_id,
-        clientSecret: spotify_client_secret,
-        accessToken: spotify_access_token,
-      });
-    } else {
-      this.spotify = undefined;
-      console.warn("missing spotify api env vars");
-    }
+    this.spotify = new SpotifyWebApi({
+      clientId: SPOTIFY_CLIENT_ID,
+      clientSecret: SPOTIFY_CLIENT_SECRET,
+      accessToken: SPOTIFY_ACCESS_TOKEN,
+    });
   }
   responses: {
     [key: string]: (arg: Omit<OnMessage, "self">) => void;

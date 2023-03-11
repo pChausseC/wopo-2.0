@@ -1,14 +1,15 @@
 import pgPromise from "pg-promise";
 
+import env from "../env";
 import { ICommands } from "../types/chat-bot.types";
 
 // Configuration
 
 const connection = {
   user: "wopo",
-  host: process.env.db_url,
+  host: env.DB_URL,
   database: "wlvs",
-  password: process.env.db_pw,
+  password: env.DB_PW,
   port: 5432,
 };
 const pgClient = pgPromise()(connection);

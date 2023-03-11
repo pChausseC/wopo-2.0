@@ -10,7 +10,8 @@
     "pg-promise": "^11.3.0",
     "spotify-web-api-node": "^5.0.2",
     "tmi.js": "^1.8.5",
-    "ts-toolbelt": "^9.6.0"
+    "ts-toolbelt": "^9.6.0",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@tsconfig/node16": "^1.0.3",
