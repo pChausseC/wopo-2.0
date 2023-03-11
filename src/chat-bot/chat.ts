@@ -10,9 +10,6 @@ import { isMod } from "../utils";
 const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_ACCESS_TOKEN } = env;
 
 export default class Chat {
-  private api: any;
-  private fn: any;
-  private cron: any;
   private spotify?: SpotifyWebApi;
   constructor(private twitchClient: Client) {
     this.spotify = new SpotifyWebApi({
@@ -129,29 +126,29 @@ export default class Chat {
       }
     }
   }
-  // Get Fortnite Stats
-  private async getStats({ channel, message }: ResponseProps) {
-    const messageArray = message.split(" ");
-    if (messageArray.length <= 1) {
-      const strStat = await this.fn.getStats(message + " default");
-      this.twitchClient.say(channel, `${strStat.data}`);
-    } else {
-      const fnData = await this.fn.getStats(message);
-      this.twitchClient.say(channel, `${channel} has ${fnData.data} ${fnData.mode} wins!`);
-    }
-  }
-  // Get Caster Info
+  // TODO Get Fortnite Stats
+  // private async getStats({ channel, message }: ResponseProps) {
+  //   const messageArray = message.split(" ");
+  //   if (messageArray.length <= 1) {
+  //     const strStat = await this.fn.getStats(message + " default");
+  //     this.twitchClient.say(channel, `${strStat.data}`);
+  //   } else {
+  //     const fnData = await this.fn.getStats(message);
+  //     this.twitchClient.say(channel, `${channel} has ${fnData.data} ${fnData.mode} wins!`);
+  //   }
+  // }
+  // TODO Get Caster Info
   private async getCasterInfo({ channel, user, message }: ResponseProps) {
     if (isMod(user)) {
       const messageArray = message.split(" ");
       if (messageArray.length >= 1) {
         const caster = messageArray[1];
 
-        const casterInfo = {}; // await api.channelInfo(caster);
+        const casterInfo = await api.channelInfo(caster);
         if (casterInfo)
           this.twitchClient.say(
             channel,
-            `Check out ${caster} over at https://www.twitch.tv/${caster} they are a great friend of the channel and we encourage you to drop them a follow!`,
+            `Check out ${casterInfo.broadcaster_name} over at https://www.twitch.tv/${casterInfo.broadcaster_name} they are a great friend of the channel and we encourage you to drop them a follow!  They were last playing ${casterInfo.game_name}`,
           );
       }
     }
@@ -170,33 +167,33 @@ export default class Chat {
       this.twitchClient.say(channel, messages[randNum]);
     }
   }
-  // Get Uptime
-  private async getUptime({ channel }: ResponseProps) {
-    const uptimeInfo = await this.api.uptime();
-    this.twitchClient.say(channel, uptimeInfo);
-  }
-  // Get Follow Age
-  private async getFollowAge({ user }: ResponseProps) {
-    if (user.username) {
-      const followAge = await this.api.followage(user["user-id"]);
-      this.twitchClient.whisper(user.username, followAge);
-    }
-  }
-  // Get Clip
-  private async getClip({ user }: ResponseProps) {
-    if (user.username) {
-      const clipURL = await this.api.clip();
-      this.twitchClient.whisper(user.username, clipURL);
-    }
-  }
-  //Search for information
-  private async searchInfo({ channel, message }: ResponseProps) {
-    const query = message.split("?")[1].toString().trim();
-    const searchI = await this.api.waQuery(query);
-    if (searchI != null) {
-      this.twitchClient.say(channel, searchI);
-    }
-  }
+  // TODO Get Uptime
+  // private async getUptime({ channel }: ResponseProps) {
+  //   const uptimeInfo = await this.api.uptime();
+  //   this.twitchClient.say(channel, uptimeInfo);
+  // }
+  // TODO Get Follow Age
+  // private async getFollowAge({ user }: ResponseProps) {
+  //   if (user.username) {
+  //     const followAge = await this.api.followage(user["user-id"]);
+  //     this.twitchClient.whisper(user.username, followAge);
+  //   }
+  // }
+  // TODO Get Clip
+  // private async getClip({ user }: ResponseProps) {
+  //   if (user.username) {
+  //     const clipURL = await this.api.clip();
+  //     this.twitchClient.whisper(user.username, clipURL);
+  //   }
+  // }
+  // TODO Search for information
+  // private async searchInfo({ channel, message }: ResponseProps) {
+  //   const query = message.split("?")[1].toString().trim();
+  //   const searchI = await this.api.waQuery(query);
+  //   if (searchI != null) {
+  //     this.twitchClient.say(channel, searchI);
+  //   }
+  // }
   // Delete Command
   private deleteCommand({ channel, user, message }: ResponseProps) {
     if (isMod(user)) {
@@ -241,8 +238,8 @@ export default class Chat {
    * !cycle [command to execute] [duration in minutes]
    * !cycle stop
    */
-  _cronSchedule = null;
-
+  // _cronSchedule = null;
+  // TODO cycleCommand
   // private async cycleCommand({ channel, user, message }: ResponseProps) {
   //   const params = message.split(" ");
   //   if (this.util.isMod(user)) {
@@ -303,40 +300,40 @@ export default class Chat {
     }
   }
 
-  // Automatic Bot Engagement
-  _engagementSchedule: any = null;
-  private botEngagement({ channel, user, message }: ResponseProps) {
-    const _arrEngagement = [
-      "Missed a stream? No problem! Every stream is organized with a title, thumbnail, and date over at www.youtube.com/c/wlvsarchive",
-      "Want to stay connected with Jay & The Wolfpack offline? Join the community discord! www.discord.gg/wlvs",
-      "New to the stream? Make sure to follow by hitting the :heart: Follow button at the bottom of the stream, also hit the :bell: to be notified every time jay goes live!",
-    ];
-    const params = message.split(" ");
-    let counter = 0;
+  // TODO Automatic Bot Engagement
+  // _engagementSchedule: any = null;
+  // private botEngagement({ channel, user, message }: ResponseProps) {
+  //   const _arrEngagement = [
+  //     "Missed a stream? No problem! Every stream is organized with a title, thumbnail, and date over at www.youtube.com/c/wlvsarchive",
+  //     "Want to stay connected with Jay & The Wolfpack offline? Join the community discord! www.discord.gg/wlvs",
+  //     "New to the stream? Make sure to follow by hitting the :heart: Follow button at the bottom of the stream, also hit the :bell: to be notified every time jay goes live!",
+  //   ];
+  //   const params = message.split(" ");
+  //   let counter = 0;
 
-    // If user is a mod, check if the command is starting or stopping
-    if (user.mod) {
-      // Stopping
-      if (params.slice(1)[0] == "stop" && this._engagementSchedule) {
-        this._engagementSchedule.destroy();
-        this._engagementSchedule = null;
-        if (user.username)
-          this.twitchClient.whisper(user.username, "Bot chat user engagement cycle stopped");
-      } else {
-        if (user.username)
-          this.twitchClient.whisper(user.username, "started chat bot user engagement post cycle");
-        // Starting
-        this._engagementSchedule = this.cron.schedule("*/10 * * * *", () => {
-          this.twitchClient.say(channel, _arrEngagement[counter]);
+  //   // If user is a mod, check if the command is starting or stopping
+  //   if (user.mod) {
+  //     // Stopping
+  //     if (params.slice(1)[0] == "stop" && this._engagementSchedule) {
+  //       this._engagementSchedule.destroy();
+  //       this._engagementSchedule = null;
+  //       if (user.username)
+  //         this.twitchClient.whisper(user.username, "Bot chat user engagement cycle stopped");
+  //     } else {
+  //       if (user.username)
+  //         this.twitchClient.whisper(user.username, "started chat bot user engagement post cycle");
+  //       // Starting
+  //       this._engagementSchedule = this.cron.schedule("*/10 * * * *", () => {
+  //         this.twitchClient.say(channel, _arrEngagement[counter]);
 
-          if (counter == _arrEngagement.length - 1) {
-            // recycle message list
-            counter = 0;
-          } else {
-            counter++; // cycle to next message in list
-          }
-        });
-      }
-    }
-  }
+  //         if (counter == _arrEngagement.length - 1) {
+  //           // recycle message list
+  //           counter = 0;
+  //         } else {
+  //           counter++; // cycle to next message in list
+  //         }
+  //       });
+  //     }
+  //   }
+  // }
 }
