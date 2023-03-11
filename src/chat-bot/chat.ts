@@ -1,16 +1,16 @@
 import SpotifyWebApi from "spotify-web-api-node";
-import { ChatUserstate, Client } from "tmi.js";
+import { Client } from "tmi.js";
 
 import env from "../env";
-import { db } from "../services/db";
+import * as db from "../services/db";
 import { OnMessage, ResponseProps } from "../types/twitch.types";
+import { isMod } from "../utils";
+
 const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_ACCESS_TOKEN } = env;
 
 export default class Chat {
-  private util: any;
   private api: any;
   private fn: any;
-  private db: any;
   private cron: any;
   private spotify?: SpotifyWebApi;
   constructor(private twitchClient: Client) {
@@ -58,6 +58,10 @@ export default class Chat {
     "!song": this.nowPlayingCommand,
     // "!botengagement": this.botEngagement,
   };
+  private doesCommandExist = async (command: string): Promise<boolean> => {
+    const { data: exists } = await db.doesCommandExist(command);
+    return !!this.responses[command] || exists;
+  };
   async runCommand({
     command,
     channel,
@@ -77,60 +81,49 @@ export default class Chat {
   private boop({ channel }: ResponseProps) {
     this.twitchClient.say(channel, "boop!");
   }
-  // Execute db command
-  private executeCommand(channel: string, response: string) {
-    this.twitchClient.say(channel, response);
-  }
-  // Error function
-  private commandError(command: string, error: any) {
-    if (error.received === 0) {
-      console.log(`The command ${command} does not exist`);
-    }
-  }
+
   // Add command
-  private addCommand({ channel, user, message }: ResponseProps) {
-    if (this.util.isMod(user)) {
+  private async addCommand({ channel, user, message }: ResponseProps) {
+    if (isMod(user)) {
       const command = message.split(" ")[1];
       if (!command.toString().startsWith("!")) return;
+
+      const exists = await this.doesCommandExist(command);
+      if (exists) {
+        this.twitchClient.say(channel, `"${command}" already exists`);
+        return;
+      }
+
       const response = message.split(" ").slice(2).join(" ");
-      this.db.newCommand(
+      const { error } = await db.newCommand(
         command,
         false,
         response,
-        user.username,
+        user.username ?? "unknown",
         channel,
-        (channel: string, command: string) => {
-          this.twitchClient.say(channel, `created command ${command}`);
-        },
-        (command: string, user: ChatUserstate, error: any) => {
-          if (user.username)
-            this.twitchClient.whisper(user.username, `Error adding the command: ${error.message}`);
-        },
       );
+      if (error) {
+        if (user.username)
+          this.twitchClient.whisper(user.username, `Error adding the command: ${error.message}`);
+      } else {
+        this.twitchClient.say(channel, `created command ${command}`);
+      }
     }
   }
 
   // Update Command
-  private updateCommand({ channel, user, message }: ResponseProps) {
+  private async updateCommand({ channel, user, message }: ResponseProps) {
     // Update stuff here
-    if (this.util.isMod(user)) {
+    if (isMod(user)) {
       const command = message.split(" ")[1];
       if (!command.toString().startsWith("!")) return;
       const response = message.split(" ").splice(2).join(" ");
-      this.db.updateCommand(
-        command,
-        true,
-        response,
-        user.username,
-        channel,
-        (channel: string, command: string) => {
-          // Say stuff updated okay
-          this.twitchClient.say(channel, `Command ${command} was updated successfully!`);
-        },
-        (user: ChatUserstate) => {
-          if (user.username) this.twitchClient.whisper(user.username, "Error adding the command");
-        },
-      );
+      const { error } = await db.updateCommand(command, response, user.username ?? "unknown");
+      if (error) {
+        if (user.username) this.twitchClient.whisper(user.username, "Error adding the command");
+      } else {
+        this.twitchClient.say(channel, `Command ${command} was updated successfully!`);
+      }
     }
   }
   // Get Fortnite Stats
@@ -146,7 +139,7 @@ export default class Chat {
   }
   // Get Caster Info
   private async getCasterInfo({ channel, user, message }: ResponseProps) {
-    if (this.util.isMod(user)) {
+    if (isMod(user)) {
       const messageArray = message.split(" ");
       if (messageArray.length >= 1) {
         const caster = messageArray[1];
@@ -200,13 +193,13 @@ export default class Chat {
     }
   }
   // Delete Command
-  private deleteCommand({ user, message }: ResponseProps) {
-    if (user.mod) {
+  private deleteCommand({ channel, user, message }: ResponseProps) {
+    if (isMod(user)) {
       const command = message.split(" ")[1];
       if (!command.toString().startsWith("!")) return;
-      db.removeCommand(command).then(({ data }) => {
-        if (data) {
-          this.twitchClient.say(data.channel, `Deleted command ${command} successfully!`);
+      db.removeCommand(command).then(({ error }) => {
+        if (!error) {
+          this.twitchClient.say(channel, `Deleted command ${command} successfully!`);
         }
       });
     }
@@ -215,9 +208,13 @@ export default class Chat {
   private setMultilink({ channel, user, message }: ResponseProps) {
     const params = message.split(" ");
     if (params.length === 1) {
-      this.db.getCommand(message, channel, user.mod, this.executeCommand, this.commandError);
+      db.getDBCommand(message).then(({ data }) => {
+        if (data) {
+          this.twitchClient.say(channel, data.response);
+        }
+      });
     } else {
-      if (this.util.isMod(user)) {
+      if (isMod(user)) {
         const partners = params.slice(1);
         console.log(partners);
         let multi = "http://kadgar.net/live/" + channel;

@@ -1,6 +1,6 @@
 import { Client } from "tmi.js";
 
-import { db } from "../services/db";
+import * as db from "../services/db";
 import { ChatBotConfig, TwitchTokenDetails } from "../types/chat-bot.types";
 import {
   MalformedTwitchRequestError,
