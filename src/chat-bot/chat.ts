@@ -2,6 +2,7 @@ import SpotifyWebApi from "spotify-web-api-node";
 import { Client } from "tmi.js";
 
 import env from "../env";
+import * as api from "../services/api";
 import * as db from "../services/db";
 import { OnMessage, ResponseProps } from "../types/twitch.types";
 import { isMod } from "../utils";
@@ -46,17 +47,19 @@ export default class Chat {
     },
 
     "!deletecom": this.deleteCommand,
-    "!ftn": this.getStats,
+    "!hug": this.giveHug,
+    "!multi": this.setMultilink,
+    "!song": this.nowPlayingCommand,
     "!caster": this.getCasterInfo,
+    /* TODOs
+    "!ftn": this.getStats,
     "!uptime": this.getUptime,
     "!followage": this.getFollowAge,
     "!clip": this.getClip,
-    "!hug": this.giveHug,
-    "!multi": this.setMultilink,
     "!?": this.searchInfo,
-    // "!cycle": this.cycleCommand,
-    "!song": this.nowPlayingCommand,
-    // "!botengagement": this.botEngagement,
+    "!cycle": this.cycleCommand,
+    "!botengagement": this.botEngagement,
+    */
   };
   private doesCommandExist = async (command: string): Promise<boolean> => {
     const { data: exists } = await db.doesCommandExist(command);
@@ -143,11 +146,13 @@ export default class Chat {
       const messageArray = message.split(" ");
       if (messageArray.length >= 1) {
         const caster = messageArray[1];
-        const casterInfo = await this.api.channelInfo(caster);
-        this.twitchClient.say(
-          channel,
-          `Check out ${casterInfo.name} over at ${casterInfo.URL} they are a great friend of the channel and we encourage you to drop them a follow! They were last playing ${casterInfo.lastGame}.`,
-        );
+
+        const casterInfo = {}; // await api.channelInfo(caster);
+        if (casterInfo)
+          this.twitchClient.say(
+            channel,
+            `Check out ${caster} over at https://www.twitch.tv/${caster} they are a great friend of the channel and we encourage you to drop them a follow!`,
+          );
       }
     }
   }

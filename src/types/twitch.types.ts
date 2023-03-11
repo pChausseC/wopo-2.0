@@ -7,3 +7,8 @@ export type OnMessage = ZipObj<
 >;
 
 export type ResponseProps = Omit<OnMessage, "self">;
+
+export type Broadcaster = {
+  broadcaster_name: string;
+  game_name: string;
+};
