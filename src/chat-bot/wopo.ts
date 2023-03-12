@@ -1,4 +1,4 @@
-import { Client } from "tmi.js";
+import { Client, Options } from "tmi.js";
 
 import * as db from "../services/db";
 import { ChatBotConfig, TwitchTokenDetails } from "../types/chat-bot.types";
@@ -7,6 +7,7 @@ import {
   NoTwitchResponseError,
   TwitchResponseError,
 } from "../types/error.types";
+import { isMod } from "../utils";
 
 import Chat from "./chat";
 
@@ -99,11 +100,11 @@ export class Wopo {
     this.twitchClient.on("message", (channel, user, message, self) => {
       const isLink = message.match(regex);
       const isClip = message.match(regex2);
-      const timeoutMSG = `@${user.username}no links in chat. Whisper the link to a mod.`;
+      const timeoutMSG = `@${user.username} no links in chat. Whisper the link to a mod.`;
       //allow subs to post clip links, timeout all other links
       if (user.subscriber && isClip) {
         /* empty */
-      } else if (!(self || user.mod) && isLink) {
+      } else if (!(self || isMod(user)) && isLink) {
         this.twitchClient?.timeout(channel, `${user.username}`, 5, "posted link");
         this.twitchClient?.say(channel, timeoutMSG);
       }
@@ -117,7 +118,7 @@ export class Wopo {
     });
   }
 
-  private buildConnectionConfig(channel: string, username: string, accessToken: string) {
+  private buildConnectionConfig(channel: string, username: string, accessToken: string): Options {
     return {
       options: { debug: true },
       connection: {
