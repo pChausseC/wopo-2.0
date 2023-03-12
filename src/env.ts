@@ -5,7 +5,7 @@ const envSchema = z.object({
   CLIENT_ID: z.string(),
   AUTHORIZATION_CODE: z.string(),
   CHANNEL: z.string(),
-  USER: z.string(),
+  BOT_USERNAME: z.string(),
   SPOTIFY_CLIENT_SECRET: z.string(),
   SPOTIFY_CLIENT_ID: z.string(),
   SPOTIFY_ACCESS_TOKEN: z.string(),

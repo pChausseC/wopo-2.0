@@ -26,13 +26,13 @@ export class Wopo {
   constructor(private config: ChatBotConfig) {}
 
   async launch() {
-    const { data } = await db.getChannelRefreshToken(this.config.twitchChannel);
+    const { data } = await db.getChannelRefreshToken(this.config.twitchUser);
     if (data) {
       this.tokenDetails = await this.fetchAccessToken(data.token);
       db.updateChannelRefreshToken(data.id, this.tokenDetails.refresh_token);
     } else {
       this.tokenDetails = await this.fetchAccessToken();
-      db.addChannelRefreshToken(this.config.twitchChannel, this.tokenDetails.refresh_token);
+      db.addChannelRefreshToken(this.config.twitchUser, this.tokenDetails.refresh_token);
     }
     this.twitchClient = new Client(
       this.buildConnectionConfig(
@@ -125,10 +125,10 @@ export class Wopo {
         reconnect: true,
       },
       identity: {
-        username: `${username}`,
+        username,
         password: `oauth:${accessToken}`,
       },
-      channels: [`${channel}`],
+      channels: [channel],
     };
   }
 }

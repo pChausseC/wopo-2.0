@@ -7,6 +7,6 @@ const bot = new Wopo({
   twitchClientId: env.CLIENT_ID,
   twitchClientSecret: env.CLIENT_SECRET,
   twitchChannel: env.CHANNEL, // the channel you want to connect to
-  twitchUser: env.USER, // the bot user account
+  twitchUser: env.BOT_USERNAME, // the bot user account
 });
 bot.launch();
