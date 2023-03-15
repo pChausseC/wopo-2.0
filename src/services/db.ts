@@ -95,7 +95,7 @@ export const updateChannelRefreshToken = (id: number, token: string) =>
 
 export const addChannelRefreshToken = (channel: string, token: string) =>
   queryWrapper(
-    pgClient.none("INSERT public.channel_refresh_tokens(channel, token) VALUES ($1,$2);", [
+    pgClient.none("INSERT INTO public.channel_refresh_tokens(channel, token) VALUES ($1,$2);", [
       channel,
       token,
     ]),
